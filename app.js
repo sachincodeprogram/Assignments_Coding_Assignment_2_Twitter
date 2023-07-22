@@ -2,7 +2,7 @@ const express = require("express");
 const path = require("path");
 const sqlite3 = require("sqlite3");
 const { open } = require("sqlite");
-const { bcrypt } = require("bcrypt");
+const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const app = express();
@@ -43,7 +43,7 @@ const getFollowingPeopleIdsOfUser = async (username) => {
 
 const authentication = (request, response, next) => {
   let jwtToken;
-  const autHeader = request.headers["authorization"];
+  const authHeader = request.headers["authorization"];
   if (authHeader) {
     jwtToken = authHeader.split(" ")[1];
   }
@@ -166,9 +166,9 @@ app.get("/user/following/", authentication, async (request, response) => {
   const { username, userId } = request;
   const getFollowingUsersQuery = `SELECT name FROM follower
     
-    INNER JOIN user ON user.user_id = follower.follower_user_id
+    INNER JOIN user ON user.user_id = follower.following_user_id
     
-    WHERE follower_user_id '${userId}';`;
+    WHERE follower_user_id = '${userId}';`;
 
   const followingPeople = await db.all(getFollowingUsersQuery);
   response.send(followingPeople);
@@ -179,7 +179,7 @@ app.get("/user/followers/", authentication, async (request, response) => {
 
   const getFollowersQuery = `SELECT DISTINCT name FROM follower
     INNER JOIN user ON user.user_id = follower.follower_user_id
-    WHEREN following_user_id='${userId}'`;
+    WHERE following_user_id='${userId}'`;
 
   const followers = await db.all(getFollowersQuery);
   response.send(followers);
@@ -231,7 +231,7 @@ app.get(
 );
 
 app.get(
-  "/tweets/:tweetId/reqlies/",
+  "/tweets/:tweetId/replies/",
   authentication,
   tweetAccessVerification,
   async (request, response) => {
@@ -249,7 +249,7 @@ app.get("/user/tweets/", authentication, async (request, response) => {
 
   const getTweetsQuery = `
     
-    SELECT tweet
+    SELECT tweet,
     
     COUNT(DISTINCT like_id) AS likes,
     COUNT(DISTINCT reply_id) AS replies,
@@ -278,7 +278,7 @@ app.post("/user/tweets/", authentication, async (request, response) => {
 });
 
 app.delete("/tweets/:tweetId/", authentication, async (request, response) => {
-  const { tweetId } = request.paquest.params;
+  const { tweetId } = request.params;
   const { userId } = request;
   const getTheTweetQuery = `SELECT * FROM tweet WHERE user_id = '${userId}' AND tweet_id = '${tweetId}';`;
   const tweet = await db.get(getTheTweetQuery);
